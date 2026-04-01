@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigComp - tabell</title>
+    <style>
+        /* Reset and Base Styles */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #0f172a; 
+            color: #f8fafc;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* App Bar */
+        .app-bar {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-bottom: 1px solid #334155;
+            background: #1e293b;
+            flex-shrink: 0;
+        }
+        .back-btn {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 16px;
+            padding: 6px 10px;
+            border-radius: 4px;
+        }
+        .back-btn:hover { background: #334155; }
+        .app-title { font-size: 18px; color: #94a3b8; }
+
+        /* Settings Panel */
+        .settings-toggle {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 500;
+            user-select: none;
+            color: #94a3b8;
+        }
+        .settings-panel {
+            background: #0f172a;
+            border-bottom: 1px solid #334155;
+            padding: 20px;
+            display: none;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .settings-panel.open { display: flex; }
+
+        .settings-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .filter-group { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            width: 100%;
+        }
+        .filter-label { 
+            font-size: 11px; 
+            font-weight: 700; 
+            color: #94a3b8; 
+            text-transform: uppercase; 
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 6px;
+            margin-bottom: 4px;
+        }
+        
+        .search-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+            border: 1px solid #334155;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 14px;
+            width: 300px;
+            outline: none;
+            background: #1e293b;
+            color: #f8fafc;
+        }
+        .search-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+
+        .checkbox-grid { 
+            display: flex; 
+            flex-wrap: wrap;
+            gap: 16px; 
+        }
+        .checkbox-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 13px; 
+            cursor: pointer; 
+            color: #f8fafc;
+            padding: 4px 0;
+            transition: color 0.2s;
+            white-space: nowrap;
+        }
+        .checkbox-item:hover { color: #3b82f6; }
+        .checkbox-item input { 
+            cursor: pointer; 
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+        }
+
+        /* Table Styles */
+        .table-container {
+            flex-grow: 1;
+            overflow: auto;
+            position: relative;
+            background: #0f172a;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+        }
+        thead th {
+            position: sticky;
+            top: 0;
+            background: #1e293b;
+            z-index: 10;
+            border-bottom: 2px solid #334155;
+            border-right: 1px solid #334155;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+        td {
+            border-bottom: 1px solid #334155;
+            border-right: 1px solid #334155;
+            padding: 10px 12px;
+            font-size: 13px;
+            vertical-align: top;
+            line-height: 1.5;
+            color: #f8fafc;
+        }
+        tr:hover td { background-color: #1e293b; }
+
+        /* Column Widths */
+        .col-area { width: 100px; }
+        .col-comp { width: 220px; }
+        .col-level { width: 140px; }
+        .col-desc { width: auto; }
+
+        /* Content Tags */
+        .area-tag {
+            background: #334155;
+            color: #3b82f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .level-badge { font-weight: 600; font-size: 11px; text-transform: uppercase; }
+        .level-basic { color: #4ade80; }
+        .level-intermediate { color: #fbbf24; }
+        .level-advanced { color: #f87171; }
+        .level-highly { color: #c084fc; }
+        
+        .outcomes-list { margin: 8px 0 0 18px; }
+        .outcomes-list li { margin-bottom: 4px; }
+        
+        .ai-tag {
+            background: #334155;
+            color: #94a3b8;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-left: 4px;
+        }
+
+        #no-results {
+            padding: 40px;
+            text-align: center;
+            color: #94a3b8;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-bar">
+        <a href="index.html" class="back-btn">← App</a>
+        <div class="app-title">DigComp - tabell</div>
+    </div>
+
+    <div class="settings-toggle" onclick="toggleSettings()">
+        <span>FILTER & INSTÄLLNINGAR</span>
+        <span id="toggle-icon">▼</span>
+    </div>
+
+    <div id="settings-panel" class="settings-panel">
+        <div class="settings-grid">
+            <!-- Column 1: Search & AI -->
+            <div class="filter-group search-container">
+                <div>
+                    <label class="filter-label">Fritextsökning</label>
+                    <input type="text" id="search-input" class="search-input" style="width: 100%;" placeholder="Sök i kompetenser eller resultat...">
+                </div>
+                <div style="margin-top: 8px;">
+                    <label class="filter-label">Specialfilter</label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" id="ai-only"> Endast AI-relaterat
+                    </label>
+                </div>
+            </div>
+
+            <!-- Column 2: Areas -->
+            <div class="filter-group">
+                <label class="filter-label">Visa Områden</label>
+                <div class="checkbox-grid">
+                    <label class="checkbox-item"><input type="checkbox" class="area-checkbox" value="1" checked> 1. Informationssökning, utvärdering och hantering</label>
+                    <label class="checkbox-item"><input type="checkbox" class="area-checkbox" value="2" checked> 2. Kommunikation och samarbete</label>
+                    <label class="checkbox-item"><input type="checkbox" class="area-checkbox" value="3" checked> 3. Digitalt skapande</label>
+                    <label class="checkbox-item"><input type="checkbox" class="area-checkbox" value="4" checked> 4. Säkerhet, välbefinnande och ansvarsfullt användande</label>
+                    <label class="checkbox-item"><input type="checkbox" class="area-checkbox" value="5" checked> 5. Problemidentifiering och problemlösning</label>
+                </div>
+            </div>
+
+            <!-- Column 3: Levels -->
+            <div class="filter-group">
+                <label class="filter-label">Visa Nivåer</label>
+                <div class="checkbox-grid">
+                    <label class="checkbox-item"><input type="checkbox" class="level-checkbox" value="Grundläggande" checked> Grundläggande</label>
+                    <label class="checkbox-item"><input type="checkbox" class="level-checkbox" value="Mellanliggande" checked> Mellanliggande</label>
+                    <label class="checkbox-item"><input type="checkbox" class="level-checkbox" value="Avancerad" checked> Avancerad</label>
+                    <label class="checkbox-item"><input type="checkbox" class="level-checkbox" value="Mycket avancerad" checked> Mycket avancerad</label>
+                    <label class="checkbox-item"><input type="checkbox" class="level-checkbox" value="Allmänt" checked> Allmänt</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-area">Område</th>
+                    <th class="col-comp">Kompetens</th>
+                    <th class="col-level">Nivå</th>
+                    <th class="col-desc">Beskrivning & Läranderesultat</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+        <div id="no-results">Inga resultat matchar valda filter.</div>
+    </div>
+
+    <script>
+        const rawData = [
+            {
+                id: 1,
+                title: "Informationssökning, utvärdering och hantering",
+                competences: [
+                    { 
+                        id: "1.1", 
+                        title: "Bläddra, söka och filtrera information", 
+                        levels: [
+                            { name: "Grundläggande", desc: "På grundläggande nivå kommer individer ihåg och utför enkla uppgifter med vägledning vid behov.", outcomes: ["Erkänna fördelarna med att använda olika digitala sökverktyg och med metoder, beroende på ens syfte. [AI-I]", "Identifiera huvudfunktionerna i vanliga AI-drivna och traditionella sökverktyg. [AI-E]", "Inse att digitala sökresultat eller utdata kan innehålla information som kanske inte är relevant. [AI-I]", "Använda digitala sökverktyg för att implementera, förfina och uppdatera grundläggande informationssökningar. [AI-I]"] },
+                            { name: "Mellanliggande", desc: "På mellanliggande nivå identifierar och utför individer väldefinierade uppgifter och löser väldefinierade problem självständigt.", outcomes: ["Målmedvetet utforska nya digitala sökverktyg och strategier. [AI-I]", "Välja lämpliga digitala sökverktyg baserat på informationsbehov. [AI-I]", "Skilja mellan mer och mindre relevanta digitala sökresultat eller utdata. [AI-I]", "Översätta informationsbehov till effektiva digitala sökfrågor, kommandon eller påståenden. [AI-I]"] },
+                            { name: "Avancerad", desc: "På avancerad nivå bedömer och tillämpar individer lösningar på en mängd olika komplexa uppgifter självständigt och anpassar sig till en mängd olika sammanhang.", outcomes: ["Kontinuerligt utforska funktioner och egenskaper hos bekanta och nya digitala sökverktyg för att fördjupa förmågan. [AI-I]", "Kombinera en mängd olika digitala sökverktyg och strategier för att hantera komplexa informationsbehov. [AI-I]", "Hjälpa andra att utveckla sin digitala sökförmåga. [AI-I]"] },
+                            { name: "Mycket avancerad", desc: "På mycket avancerad nivå bedömer, utvärderar och löser individer mycket komplexa eller specialiserade problem för att skapa nya lösningar.", outcomes: ["Hålla sig informerad om utvecklingen inom digital sökteknik. [AI-I]", "Kombinera en mängd olika digitala sökverktyg och strategier för att hantera mycket komplexa eller specialiserade informationsbehov. [AI-I]", "Hjälpa andra att implementera och förfina komplexa eller specialiserade sökningar i digitala miljöer. [AI-I]", "Bidra till förbättringar i eller nya lösningar för komplexa eller specialiserade sökningar i digitala miljöer. [AI-I]"] }
+                        ]
+                    },
+                    { 
+                        id: "1.2", 
+                        title: "Utvärdera information", 
+                        levels: [
+                            { name: "Grundläggande", desc: "På grundläggande nivå kommer individer ihåg och utför enkla uppgifter med vägledning vid behov.", outcomes: ["Erkänna fördelarna med ett försiktigt tillvägagångssätt vid tolkning av information och innehåll i digitala miljöer. [AI-I]", "Inse att vissa digitala informationskällor och system kanske inte är pålitliga. [AI-I]", "Inse att det kan vara svårt att skilja mellan information och innehåll som genererats av människor och AI-system. [AI-E]"] },
+                            { name: "Mellanliggande", desc: "På mellanliggande nivå identifierar och utför individer väldefinierade uppgifter och löser väldefinierade problem självständigt.", outcomes: ["Identifiera källan till onlineinformation och syftet med faktagranskningstjänster. [AI-I]", "Inse att data som används för att träna AI-system och hur de tränas påverkar tillförlitligheten hos den information de tillhandåller. [AI-E]", "Inse att AI-system kan producera utdata som är felaktiga, även om de kan verka rimliga. [AI-E]"] },
+                            { name: "Avancerad", desc: "På avancerad nivå bedömer och tillämpar individer lösningar på en mängd olika komplexa uppgifter självständigt och anpassar sig till en mängd olika sammanhang.", outcomes: ["Kontinuerligt granska hur AI-system, fördomar och olika intressen formar generering, presentation och tolkning av information. [AI-E]", "Beskriva egenskaper hos pålitlig digital teknik, såsom AI-system. [AI-E]", "Beskriva metoder som kan användas för att identifiera deep-fakes. [AI-E]"] },
+                            { name: "Mycket avancerad", desc: "På mycket avancerad nivå bedömer, utvärderar och löser individer mycket komplexa eller specialiserade problem för att skapa nya lösningar.", outcomes: ["Systematiskt bedöma och utvärdera digitala källor, information och innehåll för att stödja komplext beslutsfattande. [AI-I]", "Leda eller bidra till initiativ som stöder korrekt tolkning av information i digitala miljöer. [AI-I]"] }
+                        ]
+                    },
+                    { 
+                        id: "1.3", 
+                        title: "Hantera information", 
+                        levels: [
+                            { name: "Grundläggande", desc: "På grundläggande nivå kommer individer ihåg och utför enkla uppgifter med vägledning vid behov.", outcomes: ["Erkänna fördelarna med att hantera och organisera information i digitala miljöer.", "Ladda ner, spara, hämta, flytta och radera digitala filer.", "Organisera och formatera enkla data i en strukturerad digital miljö."] },
+                            { name: "Mellanliggande", desc: "På mellanliggande nivå identifierar och utför individer väldefinierade uppgifter självständigt.", outcomes: ["Tillämpa namngivningskonventioner för digitala filer och hierarkier för digitala mappar.", "Organisera mappar och hantera, spara och radera filer på digitala enheter, extern lagring och molntjänster.", "Identifiera vanliga typer av data och deras format, och använda datainsamlingsverktyg. [AI-I]"] },
+                            { name: "Avancerad", desc: "På avancerad nivå bedömer och tillämpar individer lösningar på en mängd olika komplexa uppgifter självständigt och anpassar sig till en mängd olika sammanhang.", outcomes: ["Prioritera etisk och transparent hantering och bearbetning av data och information i digitala miljöer. [AI-I]", "Tillämpa lämplig analys på information och data i digitala miljöer för att bidra till komplext beslutsfattande. [AI-I]"] },
+                            { name: "Mycket avancerad", desc: "På mycket avancerad nivå bedömer, utvärderar och löser individer mycket komplexa eller specialiserade problem för att skapa nya lösningar.", outcomes: ["Utveckla och implementera strategier för komplex eller specialiserad data- och informationshantering, bearbetning och analys. [AI-I]", "Bidra till förbättringar i eller nya lösningar för datahantering, bearbetning eller analys i digitala miljöer. [AI-I]"] }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 2,
+                title: "Kommunikation och samarbete",
+                competences: [
+                    { 
+                        id: "2.1", 
+                        title: "Interagera genom och med digital teknik", 
+                        levels: [
+                            { name: "Grundläggande", desc: "På grundläggande nivå kommer individer ihåg och utför enkla uppgifter med vägledning vid behov.", outcomes: ["Identifiera och använda grundläggande funktioner i digitala kommunikationsverktyg för att interagera med individer och grupper. [AI-I]", "Identifiera grundläggande funktioner hos virtuella assistenter (chatbots) och känna igen viktiga skillnader mellan interaktioner mellan människa och maskin och mellan människa och människa. [AI-I]"] },
+                            { name: "Mellanliggande", desc: "På mellanliggande nivå identifierar och utför individer väldefinierade uppgifter självständigt.", outcomes: ["Utveckla och förfina frågor, kommandon eller påståenden (prompter) för virtuella assistenter (chatbots) och AI-system för att hantera icke-komplexa interaktioner. [AI-E]", "Definiera hur människor kan interagera med robotar och identifiera deras huvudfunktioner. [AI-I]"] },
+                            { name: "Avancerad", desc: "På avancerad nivå bedömer och tillämpar individer lösningar på en mängd olika komplexa uppgifter självständigt och anpassar sig till en mängd olika sammanhang.", outcomes: ["Systematiskt utveckla och progressivt förfina frågor, kommandon eller påståenden (prompter) för AI-system för att hantera komplexa interaktioner. [AI-E]", "Organisera och/eller moderera komplexa digitala evenemang. [AI-I]"] },
+                            { name: "Mycket avancerad", desc: "På mycket avancerad nivå bedömer, utvärderar och löser individer mycket komplexa eller specialiserade problem för att skapa nya lösningar.", outcomes: ["Bedöma och kombinera digitala kommunikations- och interaktionsverktyg för mycket komplexa eller nya uppgifter. [AI-I]", "Leda eller bidra till förbättringar i eller nya lösningar för digital kommunikation eller interaktion mellan människa och maskin. [AI-I]"] }
+                        ]
+                    },
+                    { 
+                        id: "2.2", 
+                        title: "Dela genom digital teknik", 
+                        levels: [
+                            { name: "Grundläggande", desc: "På grundläggande nivå kommer individer ihåg och utför enkla uppgifter med vägledning vid behov.", outcomes: ["Erkänna vikten av etisk och ansvarsfull delning av information och innehåll. [AI-I]", "Inse att innehåll kan delas på en mängd olika sätt av både AI-system och människor. [AI-E]"] },
+                            { name: "Mellanliggande", desc: "På mellanliggande nivå identifierar och utför individer väldefinierade uppgifter självständigt.", outcomes: ["Definiera ansvar förknippat med att dela information och innehåll i digitala miljöer. [AI-I]", "Rapportera eller flagga felaktig information och desinformation som har delats i digitala miljöer. [AI-I]"] },
+                            { name: "Avancerad", desc: "På avancerad nivå bedömer och tillämpar individer lösningar på en mängd olika komplexa uppgifter självständigt och anpassar sig till en mängd olika sammanhang.", outcomes: ["Ge råd till andra om effektiva och etiska sätt att dela information och innehåll i digitala miljöer. [AI-I]"] },
+                            { name: "Mycket avancerad", desc: "På mycket avancerad nivå bedömer, utvärderar och löser individer mycket komplexa eller specialiserade problem för att skapa nya lösningar.", outcomes: ["Bidra till komplexa eller specialiserade initiativ för att dela information och innehåll i digitala miljöer. [AI-I]", "Leda eller bidra till förbättringar i eller nya lösningar för att dela information och innehåll i digitala miljöer. [AI-I]"] }
+                        ]
+                    },
+                    { 
+                        id: "2.3", 
+                        title: "Engagemang i samhället genom digital teknik", 
+                        levels: [
+                            { name: "Grundläggande", desc: "På grundläggande nivå kommer individer ihåg och utför enkla uppgifter med vägledning vid behov.", outcomes: ["Identifiera huvudsyften och funktioner för digitala plattformar och tjänster och använda dem med hjälp vid behov. [AI-I]", "Inse potentialen hos digital teknik för delaktighet och egenmakt – och utanförskap. [AI-I]"] },
+                            { name: "Mellanliggande", desc: "På mellanliggande nivå identifierar och utför individer väldefinierade uppgifter självständigt.", outcomes: ["Delta i diskussioner om ämnen rörande digitalt medborgarskap. [AI-I]", "Känna igen viktiga rättigheter enligt relevanta digitala lagar och förordningar, och definiera hur man utövar dem. [AI-I]"] },
+                            { name: "Avancerad", desc: "På avancerad nivå bedömer och tillämpar individer lösningar på en mängd olika komplexa uppgifter självständigt och anpassar sig till en mängd olika sammanhang.", outcomes: ["Skilja mellan AI-system med hög risk och förbjudna AI-system (enligt lagstiftning) och deras potentiella samhälleliga, politiska eller ekonomiska effekter. [AI-E]", "Stödja andra att informera sig om och utöva sina rättigheter enligt digital lagstiftning. [AI-I]"] },
+                            { name: "Mycket avancerad", desc: "På mycket avancerad nivå bedömer, utvärderar och löser individer mycket komplexa eller specialiserade problem för att skapa nya lösningar.", outcomes: ["Använda uppdaterad kunskap om digital teknik och lagstiftningsutveckling för att utvärdera effekter. [AI-I]", "Leda eller utforma initiativ för digitalt medborgarskap, till exempel för att främja medborgerligt deltagande, inkludering eller egenmakt. [AI-I]"] }
+                        ]
+                    },
+                    { id: "2.4", title: "Samarbeta genom digital teknik", levels: [{name: "Allmänt", desc: "Täcker alla färdighetsnivåer", outcomes: ["Känna igen närvaron av AI-system i digitala samarbetsverktyg. [AI-E]", "Identifiera exempel på etiskt, ansvarsfullt och effektivt samarbete mellan människa och AI. [AI-E]", "Leda samarbete i digitala miljöer. [AI-I]"]}] },
+                    { id: "2.5", title: "Digitalt beteende", levels: [{name: "Allmänt", desc: "Täcker alla färdighetsnivåer", outcomes: ["Känna igen skillnader i verbalt och icke-verbalt beteende i digitala och icke-digitala miljöer.", "Identifiera viktiga rättigheter och skyldigheter för barn och vuxna i förhållande till digitalt beteende. [AI-I]", "Svara med effektiv och respektfull kommunikation och beteende i svåra eller komplexa situationer."]}] },
+                    { id: "2.6", title: "Hantera digital identitet", levels: [{name: "Allmänt", desc: "Täcker alla färdighetsnivåer", outcomes: ["Erkänna fördelarna med att vidta åtgärder för att hantera sin digitala identitet.", "Bedöma fördelar, sociala och etiska konsekvenser av användningen av AI-system vid hantering av digital identitet. [AI-E]", "Vårda och hantera en eller flera digitala identiteter med hjälp av en mängd olika funktioner. [AI-I]"]}] }
+                ]
+            },
+            {
+                id: 3,
+                title: "Digitalt skapande",
+                competences: [
+                    { 
+                        id: "3.1", 
+                        title: "Utveckla digitalt innehåll", 
+                        levels: [
+                            { name: "Grundläggande", desc: "På grundläggande nivå kommer individer ihåg och utför enkla uppgifter med vägledning vid behov.", outcomes: ["Inse att även om AI-system kan generera innehåll, är människor nödväriga för att säkerställa etiska, ansvarsfulla och sammanhangsberoende resultat. [AI-E]", "Inse att generativ AI är en speciell typ av AI och är en av flera digitala tekniker som kan användas för att stödja skapande av innehåll. [AI-E]"] },
+                            { name: "Mellanliggande", desc: "På mellanliggande nivå identifierar och utför individer väldefinierade uppgifter självständigt.", outcomes: ["Beskriva fördelar och begränsningar vid användning av digital teknik såsom AI-system för skapande av innehåll. [AI-E]", "Interagera med AI-system målmedvetet, selektivt och etiskt för att stödja skapande av digitalt innehåll. [AI-E]"] },
+                            { name: "Avancerad", desc: "På avancerad nivå bedömer och tillämpar individer lösningar på en mängd olika komplexa uppgifter självständigt och anpassar sig till en mängd olika sammanhang.", outcomes: ["Välja och kombinera verktyg och metoder för skapande av digitalt innehåll för att möta komplexa krav på uppgifter och målgrupper. [AI-I]", "Stödja andra att utveckla sin förmåga att skapa digitalt innehåll med hjälp av etiska och ansvarsfulla tillvägagångssätt. [AI-I]"] },
+                            { name: "Mycket avancerad", desc: "På mycket avancerad nivå bedömer, utvärderar och löser individer mycket komplexa eller specialiserade problem för att skapa nya lösningar.", outcomes: ["Främja och stödja tillgänglighet och inkludering, samt selektiv och etisk användning av AI-system, vid skapande av digitalt innehåll. [AI-E]", "Leda eller bidra till förbättringar i eller nya lösningar för komplext eller specialiserat digitalt innehåll. [AI-I]"] }
+                        ]
+                    },
+                    { id: "3.2", title: "Integrera och bearbeta digitalt innehåll", levels: [{name: "Allmänt", desc: "Täcker alla färdighetsnivåer", outcomes: ["Erkänna vikten av etiska och transparenta metoder vid återanvändning eller bearbetning av befintligt digitalt innehåll. [AI-I]", "Känna igen konceptet med transparent användning av AI-system (särskilt generativ AI) vid integration och bearbetning av digitalt innehåll. [AI-E]", "Utvärdera och tillämpa avancerade tekniker för design och datavisualisering vid komplex eller specialiserad integration av digitalt innehåll. [AI-I]"]}] },
+                    { id: "3.3", title: "Upphovsrätt och licenser", levels: [{name: "Allmänt", desc: "Täcker alla färdighetsnivåer", outcomes: ["Känna igen att upphovsrätt och licenser kan gälla för digitalt innehåll, inklusive AI-genererat innehåll. [AI-E]", "Identifiera exempel på juridiska och etiska utmaningar relaterade till upphovsrätt vid träning av AI-modeller. [AI-E]", "Bedöma och korrekt tillämpa juridiska och etiska riktlinjer för användning och delning av digitalt innehåll i komplexa sammanhang. [AI-E]"]}] },
+                    { 
+                        id: "3.4", 
+                        title: "Datalogiskt tänkande och programmering", 
+                        levels: [
+                            { name: "Grundläggande", desc: "På grundläggande nivå kommer individer ihåg och utför enkla uppgifter med vägledning vid behov.", outcomes: ["Känna igen vad AI är i allmänna termer, och göra en grundläggande skillnad mellan vad som är och inte är ett AI-system. [AI-E]", "Representera enkla sekvenser symboliskt, tolka enkla symboliska sekvenser och ge grundläggande instruktioner. [AI-I]"] },
+                            { name: "Mellanliggande", desc: "På mellanliggande nivå identifierar och utför individer väldefinierade uppgifter självständigt.", outcomes: ["Känna igen att maskininlärning är en typ av programmering som används i AI som gör det möjligt för algoritmer att lära sig av data och göra förutsägelser. [AI-E]", "Känna igen att det finns steg som bör följas för att utveckla, validera och distribuera ett datorprogram eller ett AI-system. [AI-E]"] },
+                            { name: "Avancerad", desc: "På avancerad nivå bedömer och tillämpar individer lösningar på en mängd olika komplexa uppgifter självständigt och anpassar sig till en mängd olika sammanhang.", outcomes: ["Erkänna vikten av mänsklig tillsyn och människo-centrerade tillvägagångssätt vid utveckling och distribution av datorprogram och AI-system. [AI-E]", "Beskriva de viktigaste stegen i att utveckla, validera och distribuera ett datorprogram eller ett AI-system. [AI-E]", "Identifiera och (helt eller delvis) automatisera rutuppgifter med programmeringsverktyg eller AI-system. [AI-E]"] },
+                            { name: "Mycket avancerad", desc: "På mycket avancerad nivå bedömer, utvärderar och löser individer mycket komplexa eller specialiserade problem för att skapa nya lösningar.", outcomes: ["Främja och stödja etiska metoder för programmering och/eller utveckling av AI-system. [AI-E]", "Leda eller bidra till komplexa projekt fokuserade på tillämpningar av datalogiskt tänkande, programmering eller AI-system. [AI-E]", "Hjälpa andra att utveckla grundläggande programmeringsförmåga och/eller förmåga att använda AI-system. [AI-E]"] }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 4,
+                title: "Säkerhet, välbefinnande och ansvarsfullt användande",
+                competences: [
+                    { 
+                        id: "4.1", 
+                        title: "Skydda enheter", 
+                        levels: [
+                            { name: "Grundläggande", desc: "På grundläggande nivå kommer individer ihåg och utför enkla uppgifter med vägledning vid behov.", outcomes: ["Erkänna vikten av ens individuella roll i att skydda digitala enheter och deras innehåll.", "Identifiera och tillämpa grundläggande skyddsåtgärder för enheter såsom antivirusprogram, skärmlåsning och multifaktorautentisering."] },
+                            { name: "Mellanliggande", desc: "På mellanliggande nivå identifierar och utför individer väldefinierade uppgifter självständigt.", outcomes: ["Erkänna vikten av att förbli vaksam och uppdaterad med cybersäkerhetsmetoder. [AI-I]", "Känna igen att ny och framväxande digital teknik såsom AI-system kan användas för både cyberattacker och cybersäkerhet. [AI-E]"] },
+                            { name: "Avancerad", desc: "På avancerad nivå bedömer och tillämpar individer lösningar på en mängd olika komplexa uppgifter självständigt och anpassar sig till en mängd olika sammanhang.", outcomes: ["Prioritera regelbunden kontroll och uppdatering av cybersäkerhetsåtgärder för att skydda digitala enheter och deras innehåll. [AI-I]", "Identifiera exempel på hur ny och framväxande teknik såsom AI-system används i cyberattacker och cybersäkerhet. [AI-E]"] },
+                            { name: "Mycket avancerad", desc: "På mycket avancerad nivå bedömer, utvärderar och löser individer mycket komplexa eller specialiserade problem för att skapa nya lösningar.", outcomes: ["Hålla sig informerad om digital teknisk och lagstiftningsmässig utveckling i relation till cybersäkerhet. [AI-I]", "Bedöma individers rättigheter enligt relevanta bestämmelser i nuvarande cybersäkerhetslagstiftning. [AI-I]", "Leda eller bidra till medborgarfokuserade cybersäkerhetsinitiativ. [AI-I]"] }
+                        ]
+                    },
+                    { id: "4.2", title: "Skydda personuppgifter och integritet", levels: [{name: "Allmänt", desc: "Täcker alla färdighetsnivåer", outcomes: ["Identifiera risker med att dela personuppgifter i digitala miljöer, inklusive specifika risker i relation till AI-system. [AI-E]", "Beskriva integritetskonsekvenser förknippade med användning av delat onlineinnehåll, till exempel för att träna AI-system. [AI-E]", "Leda eller bidra till utformningen av strategier för skydd av personuppgifter i digitala sammanhang. [AI-I]"]}] },
+                    { id: "4.3", title: "Stödja välbefinnande", levels: [{name: "Allmänt", desc: "Täcker alla färdighetsnivåer", outcomes: ["Identifiera begränsningar och risker med att använda virtuella assistenter och AI-system för att stödja mänskligt välbefinnande. [AI-E]", "Beskriva sätt på vilka viss digital teknik, såsom sociala medier, förstärker och vidmakthåller fördomar, stereotypisering och utanförskap. [AI-I]", "Främja åtgärder som stödjer välbefinnande och inkludering i digitala miljöer. [AI-I]"]}] },
+                    { id: "4.4", title: "Digital tekniks miljöpåverkan", levels: [{name: "Allmänt", desc: "Täcker alla färdighetsnivåer", outcomes: ["Känna igen att viss digital teknik och infrastruktur, såsom AI-system och datacenter, har stor påverkan på miljön. [AI-E]", "Identifiera miljöpåverkan från digital teknik som uppstår under tillverkning, användning och kassering, samt från datacenter och e-handel. [AI-I]", "Leda eller bidra till initiativ för digital hållbarhet. [AI-I]"]}] }
+                ]
+            },
+            {
+                id: 5,
+                title: "Problemidentifiering och problemlösning",
+                competences: [
+                    { 
+                        id: "5.1", 
+                        title: "Identifiera och lösa tekniska problem", 
+                        levels: [
+                            { name: "Grundläggande", desc: "På grundläggande nivå kommer individer ihåg och utför enkla uppgifter med vägledning vid behov.", outcomes: ["Identifiera enkla tekniska problem vid användning av enheter och programvara. [AI-I]", "Identifiera var man kan hitta hjälp eller instruktioner för att lösa ett tekniskt problem. [AI-I]"] },
+                            { name: "Mellanliggande", desc: "På mellanliggande nivå identifierar och utför individer väldefinierade uppgifter självständigt.", outcomes: ["Felsöka vanliga tekniska problem (t.ex. anslutning, programvaruuppdateringar, hårdvaruproblem). [AI-I]", "Välja och tillämpa lämpliga lösningar för att lösa väldefinierade tekniska problem. [AI-I]"] },
+                            { name: "Avancerad", desc: "På avancerad nivå bedömer och tillämpar individer lösningar på en mängd olika komplexa uppgifter självständigt och anpassar sig till en mängd olika sammanhang.", outcomes: ["Lösa en mängd olika komplexa tekniska problem i digitala miljöer. [AI-I]", "Hjälpa andra att felsöka och lösa tekniska problem. [AI-I]"] },
+                            { name: "Mycket avancerad", desc: "På mycket avancerad nivå bedömer, utvärderar och löser individer mycket komplexa eller specialiserade problem för att skapa nya lösningar.", outcomes: ["Hålla sig informerad om framväxande tekniska problem och deras lösningar. [AI-I]", "Leda eller bidra till utvecklingen av nya lösningar för teknisk problemlösning. [AI-I]"] }
+                        ]
+                    },
+                    { id: "5.2", title: "Identifiera behov och digitala tekniska svar", levels: [{name: "Allmänt", desc: "Täcker alla färdighetsnivåer", outcomes: ["Känna igen konceptet och syftet med ett digitalt assistansverktyg och närvaron av AI-system i sådana verktyg. [AI-E]", "Bedöma tillgängligheten, inkluderingen, rättvisan och/eller rättighetskänsligheten hos digital teknik i ett givet sammanhang. [AI-I]", "Bidra till förbättringar i eller lösningar för digitala assistansverktyg och tillgängliga konfigurationer av digitala miljöer. [AI-I]"]}] },
+                    { id: "5.3", title: "Identifiera kreativa lösningar med hjälp av digital teknik", levels: [{name: "Allmänt", desc: "Täcker alla färdighetsnivåer", outcomes: ["Känna igen att digital teknik kan stödja, men inte ersätta, mänsklig kreativitet. [AI-I]", "Beskriva styrkor, svagheter och etiska överväganden för digital teknik inklusive AI-system i relation till mänsklig kreativitet. [AI-E]", "Leda eller bidra till initiativ fokuserade på tillämpning av digital teknik för mycket komplex eller specialiserad problemlösning. [AI-I]"]}] },
+                    { id: "5.4", title: "Identifiera och hantera behov av digital kompetens", levels: [{name: "Allmänt", desc: "Täcker alla färdighetsnivåer", outcomes: ["Erkänna värdet av att utveckla sin digitala kompetens och fördelarna med att söka stöd för att hantera behov av digital kompetens. [AI-I]", "Noggrant bedöma sina egna digitala kompetenser och behov av digital kompetens. [AI-I]", "Designa läromedel för att hjälpa andra att möta komplexa eller specialiserade behov av digital kompetens. [AI-I]"]}] }
+                ]
+            }
+        ];
+
+        // Flatten data
+        const flattenedData = [];
+        rawData.forEach(area => {
+            area.competences.forEach(comp => {
+                comp.levels.forEach(level => {
+                    flattenedData.push({
+                        areaId: area.id,
+                        areaTitle: area.title,
+                        compId: comp.id,
+                        compTitle: comp.title,
+                        levelName: level.name,
+                        levelDesc: level.desc,
+                        outcomes: level.outcomes
+                    });
+                });
+            });
+        });
+
+        const tableBody = document.getElementById('table-body');
+        const searchInput = document.getElementById('search-input');
+        const aiOnlyCheckbox = document.getElementById('ai-only');
+        const areaCheckboxes = document.querySelectorAll('.area-checkbox');
+        const levelCheckboxes = document.querySelectorAll('.level-checkbox');
+        const noResults = document.getElementById('no-results');
+
+        function toggleSettings() {
+            const panel = document.getElementById('settings-panel');
+            const icon = document.getElementById('toggle-icon');
+            const isOpen = panel.classList.toggle('open');
+            icon.textContent = isOpen ? '▲' : '▼';
+        }
+
+        function renderTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const aiOnly = aiOnlyCheckbox.checked;
+            const selectedAreas = Array.from(areaCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => parseInt(cb.value));
+            const selectedLevels = Array.from(levelCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            const filtered = flattenedData.filter(row => {
+                const matchesSearch = 
+                    row.areaTitle.toLowerCase().includes(searchTerm) ||
+                    row.compTitle.toLowerCase().includes(searchTerm) ||
+                    row.levelDesc.toLowerCase().includes(searchTerm) ||
+                    row.outcomes.some(o => o.toLowerCase().includes(searchTerm));
+                
+                const matchesArea = selectedAreas.includes(row.areaId);
+                const matchesLevel = selectedLevels.includes(row.levelName);
+                const matchesAI = !aiOnly || row.outcomes.some(o => o.includes('[AI-'));
+
+                return matchesSearch && matchesArea && matchesLevel && matchesAI;
+            });
+
+            tableBody.innerHTML = '';
+            
+            if (filtered.length === 0) {
+                noResults.style.display = 'block';
+                return;
+            }
+            noResults.style.display = 'none';
+
+            filtered.forEach(row => {
+                const tr = document.createElement('tr');
+                const levelClass = row.levelName === 'Grundläggande' ? 'level-basic' : 
+                                 row.levelName === 'Mellanliggande' ? 'level-intermediate' :
+                                 row.levelName === 'Avancerad' ? 'level-advanced' :
+                                 row.levelName === 'Mycket avancerad' ? 'level-highly' : '';
+
+                const processedOutcomes = row.outcomes.map(o => {
+                    return o.replace(/\[AI-(E|I)\]/g, '<span class="ai-tag">AI-$1</span>');
+                });
+
+                tr.innerHTML = `
+                    <td><span class="area-tag">Område ${row.areaId}</span></td>
+                    <td><strong>${row.compId}</strong> ${row.compTitle}</td>
+                    <td><span class="level-badge ${levelClass}">${row.levelName}</span></td>
+                    <td>
+                        <div style="color: #70757a; margin-bottom: 6px; font-style: italic; font-size: 12px;">${row.levelDesc}</div>
+                        <ul class="outcomes-list">
+                            ${processedOutcomes.map(o => `<li>${o}</li>`).join('')}
+                        </ul>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Listeners
+        searchInput.addEventListener('input', renderTable);
+        aiOnlyCheckbox.addEventListener('change', renderTable);
+        areaCheckboxes.forEach(cb => cb.addEventListener('change', renderTable));
+        levelCheckboxes.forEach(cb => cb.addEventListener('change', renderTable));
+
+        // Start
+        renderTable();
+    </script>
+</body>
+</html>
